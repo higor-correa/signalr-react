@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
 import { HubConnectionBuilder } from '@aspnet/signalr';
+import React, { useEffect, useState } from 'react';
 
 const ChatRoom = () => {
     const [chatConnection, setChatConnection] = useState();
     const [messages, setMessages] = useState([]);
     const [currentMessage, setCurrentMessage] = useState('');
     const [user, setUser] = useState('');
+    const [isHubConnected, setIsHubConnected] = useState(false);
 
     const sendMessage = () => {
         chatConnection.invoke('SendMessage', user, currentMessage);
@@ -21,8 +22,13 @@ const ChatRoom = () => {
             setMessages(m => [...m, { user, message }]);
         });
 
-        connection.start();
+        connection.onclose(() => setIsHubConnected(false));
 
+        connection.start()
+            .then(() => setIsHubConnected(true))
+            .catch(() => setIsHubConnected(false));
+            
+        
         setChatConnection(connection);
     }, []);
 
@@ -35,7 +41,7 @@ const ChatRoom = () => {
                 <label htmlFor="message">Message:</label>
                 <textarea name="message" value={currentMessage} onChange={(({ target }) => setCurrentMessage(target.value))} />
                 <br />
-                <button onClick={sendMessage}>Enviar</button>
+                <button onClick={sendMessage} disabled={!isHubConnected}>Enviar</button>
             </div>
             <div>
                 {messages.map(({ user, message }, idx) => <div key={idx}>{`${user}: ${message}`}</div>)}
