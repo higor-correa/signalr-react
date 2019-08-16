@@ -7,6 +7,7 @@ const ChatRoom = () => {
     const [currentMessage, setCurrentMessage] = useState('');
     const [user, setUser] = useState('');
     const [isHubConnected, setIsHubConnected] = useState(false);
+    const [connectTries, setConnectTries] = useState(0);
 
     const sendMessage = () => {
         chatConnection.invoke('SendMessage', user, currentMessage);
@@ -22,15 +23,22 @@ const ChatRoom = () => {
             setMessages(m => [...m, { user, message }]);
         });
 
-        connection.onclose(() => setIsHubConnected(false));
+        connection.onclose(() => {
+            setIsHubConnected(false);
+            setConnectTries(connectTries + 1);
+        });
 
         connection.start()
             .then(() => setIsHubConnected(true))
-            .catch(() => setIsHubConnected(false));
-            
-        
+            .catch(() => {
+                setIsHubConnected(false);
+                setTimeout(() => setConnectTries(connectTries + 1), 2000);
+                console.log(connectTries);
+            });
+
+
         setChatConnection(connection);
-    }, []);
+    }, [connectTries]);
 
     return (
         <div>
